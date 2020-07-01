@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:infinity_page_view/infinity_page_view.dart';
 import 'package:intl/intl.dart';
+import 'package:todocarendarapp/models/todo.dart';
 import 'package:todocarendarapp/screens/edit_form.dart';
+import 'package:todocarendarapp/utils/database_help.dart';
 import 'package:todocarendarapp/utils/utils.dart';
 
 class MyHomePage extends StatefulWidget {
@@ -15,7 +17,8 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
 
-
+//  DatabaseHelper databaseHelper = DatabaseHelper();
+//  List<Todo> calendarList = List<Todo>();
   //表示月
   int selectMonthValue = 0;
   String selectMonth = DateFormat.yMMMd().format(DateTime.now());
@@ -23,10 +26,15 @@ class _MyHomePageState extends State<MyHomePage> {
   //選択している日
   DateTime selectDay = DateTime.now();
   InfinityPageController _infinityPageController;
+
   int _initialPage = 0;
   int _scrollIndex = 0;
   Map<String, dynamic> monthMap;
   int yearSum;
+
+  InfinityPageController _infinityPageControllerList;
+  int calendarClose = 0;
+  int _realIndex= 1000000000;
 
 
   bool isLoading = true;
@@ -45,6 +53,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     //updateListView();
     _infinityPageController = InfinityPageController(initialPage: 0);
+    _infinityPageControllerList = InfinityPageController(initialPage: 0);
     monthChange();
     super.initState();
   }
@@ -52,6 +61,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void dispose() {
     _infinityPageController.dispose();
+    _infinityPageControllerList.dispose();
     super.dispose();
   }
 
@@ -71,7 +81,13 @@ class _MyHomePageState extends State<MyHomePage> {
                   children: <Widget>[
                     Expanded(
                       flex: 1,
-                      child: Container(),
+                        child: IconButton(
+                          icon:  Icon(calendarClose%2==0 ? Icons.file_upload : Icons.file_download),
+                          onPressed: () {
+                            calendarClose++;
+                            setState(() {});
+                          },
+                        ),
                     ),
                     Expanded(
                       flex: 5,
@@ -97,7 +113,8 @@ class _MyHomePageState extends State<MyHomePage> {
                   ],
                 ),
               ),
-              Container(
+              calendarClose % 2 == 0
+              ? Container(
                 height: 40,
                 child: Row(children: <Widget>[
                   Expanded(
@@ -144,6 +161,28 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                   ),
                 ]),
+              )
+              : Container(
+                height: 40,
+                child: InfinityPageView(
+                  itemCount: 3,
+                  controller: _infinityPageControllerList,
+                  itemBuilder: (content, index) {
+                    return Container(
+                      child: Text(DateFormat("yyyy年MM月dd日").format(selectDay),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            fontSize: 30
+                        ),
+                      ),
+                    );
+                  },
+                  onPageChanged: (index) {
+                    selectDay = selectDay.add(Duration(days: _infinityPageControllerList.realIndex-_realIndex));
+                    _realIndex =_infinityPageControllerList.realIndex;
+                    setState(() {});
+                  },
+                ),
               ),
               Expanded(
                 child: InfinityPageView(
@@ -156,8 +195,11 @@ class _MyHomePageState extends State<MyHomePage> {
                         Row(children: weekList(),),
                         scrollPage(index),
                         (_initialPage == index)
-                            ? Expanded(child: SingleChildScrollView(
-                            child: Column(children: memoList())))
+                            ? Expanded(
+                            child: SingleChildScrollView(
+                              child: Column(children: memoList()),
+                            )
+                        )
                             : Container()
                       ],
                     );
@@ -169,7 +211,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     setState(() {});
                   },
                 ),
-              ),
+              )
             ],
           ),
         ),
@@ -215,7 +257,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       );
     }
-    return _list;
+    return calendarClose % 2 == 0 ? _list : List<Widget>() ;
   }
 
 //カレンダーの日付部分（2行目以降）
@@ -239,7 +281,7 @@ class _MyHomePageState extends State<MyHomePage> {
         break;
       }
     }
-    return _list;
+    return calendarClose % 2 == 0 ? _list : List<Widget>();
   }
 
 //カレンダー１日のマス（その月以外は空白にする）
@@ -284,8 +326,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           maxLines: 1,
                           style: TextStyle(
                             fontSize: 10.0,
-                            color: DateFormat.yMMMd().format(date) ==
-                                DateFormat.yMMMd().format(DateTime.now())
+                            color: DateFormat.yMMMd().format(date) == DateFormat.yMMMd().format(DateTime.now())
                                 ? Colors.white
                                 : Colors.black,
                           ),
