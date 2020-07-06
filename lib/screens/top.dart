@@ -1,11 +1,16 @@
+import 'dart:ui';
+
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:infinity_page_view/infinity_page_view.dart';
 import 'package:intl/intl.dart';
+import 'package:todocarendarapp/models/clear.dart';
 import 'package:todocarendarapp/models/todo.dart';
 import 'package:todocarendarapp/screens/edit_form.dart';
 import 'package:todocarendarapp/utils/database_help.dart';
+import 'package:todocarendarapp/utils/database_helper_expired.dart';
 import 'package:todocarendarapp/utils/utils.dart';
 
 class MyHomePage extends StatefulWidget {
@@ -17,8 +22,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
 
-//  DatabaseHelper databaseHelper = DatabaseHelper();
-//  List<Todo> calendarList = List<Todo>();
+  
   //表示月
   int selectMonthValue = 0;
   String selectMonth = DateFormat.yMMMd().format(DateTime.now());
@@ -35,7 +39,7 @@ class _MyHomePageState extends State<MyHomePage> {
   InfinityPageController _infinityPageControllerList;
   int calendarClose = 0;
   int _realIndex= 1000000000;
-
+  Color _color = Colors.transparent;
 
   bool isLoading = true;
 
@@ -48,10 +52,17 @@ class _MyHomePageState extends State<MyHomePage> {
     Colors.grey[300],
     Colors.blue[200]];
 
+  //ここまでカレンダー
+
+  DatabaseHelper databaseHelper = DatabaseHelper();
+  List<Todo> todoList = List<Todo>();
+
+  DatabaseHelperExpired databaseHelperExpired = DatabaseHelperExpired();
+  List<Expired> expiredList = List<Expired>();
 
   @override
   void initState() {
-    //updateListView();
+    updateListView();
     _infinityPageController = InfinityPageController(initialPage: 0);
     _infinityPageControllerList = InfinityPageController(initialPage: 0);
     monthChange();
@@ -99,12 +110,12 @@ class _MyHomePageState extends State<MyHomePage> {
                         onPressed: () async {
                           await Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (context) {
-                                return EditForm(inputMode: InputMode.create);
+                              builder: (context){
+                                return EditForm(inputMode: InputMode.create,selectDay: selectDay,);
                               },
                             ),
                           );
-                          //updateListView();
+                          updateListView();
                           monthChange();
                         },
                         icon: Icon(Icons.add),
@@ -137,8 +148,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     child: Align(
                       alignment: Alignment.center,
                       child: AutoSizeText(
-                        DateFormat.yMMM("ja_JP").format(selectOfMonth(
-                            selectMonthValue)),
+                        DateFormat.yMMM("ja_JP").format(selectOfMonth(selectMonthValue)),
                         style: TextStyle(
                             fontSize: 30
                         ),
@@ -297,10 +307,7 @@ class _MyHomePageState extends State<MyHomePage> {
               width: double.infinity,
               decoration: BoxDecoration(
                 border: Border.all(width: 1, color: Colors.white),
-                color: DateFormat.yMMMd().format(selectDay) ==
-                    DateFormat.yMMMd().format(date)
-                    ? Colors.yellow[300]
-                    : Colors.transparent,
+                color: DateFormat.yMMMd().format(selectDay) == DateFormat.yMMMd().format(date) ? Colors.yellow[300] : _color,
               ),
               child: Column(
                   children: squareValue(date)
@@ -316,9 +323,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     Expanded(
                       flex: 1,
                       child: Container(
-                        color: DateFormat.yMMMd().format(date) ==
-                            DateFormat.yMMMd().format(DateTime.now()) ? Colors
-                            .red[300] : Colors.transparent,
+                        color: DateFormat.yMMMd().format(date) == DateFormat.yMMMd().format(DateTime.now()) ? Colors.red[300] : Colors.transparent,
                         child: AutoSizeText(
                           "${Utils.toInt(date.day)}",
                           textAlign: TextAlign.center,
@@ -363,70 +368,82 @@ class _MyHomePageState extends State<MyHomePage> {
   //一日のリスト（カレンダー下）
   List<Widget> memoList() {
     List<Widget> _list = [];
-    for (int i = 0; i < 2; i++) {
-      //selectday以上期限以下 期限ぎれの場合
-      if (true) {
-        _list.add(
-          InkWell(
-            child: Container(
-              height: 40,
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(width: 1, color: Colors.grey[200]),
+    for(int _clearIndex = 0; _clearIndex < 2; _clearIndex++){
+      for (int i = 0; i < (_clearIndex == 0 ? todoList.length: expiredList.length); i++) {
+        //selectday以上期限以下 期限ぎれの場合
+        if (_clearIndex == 0 ?((todoList[i].timeLimit == null || (todoList[i].timeLimit).compareTo(selectDay) > 0) && expiredList.where((expired) => (expired.todoId == todoList[i].id && DateFormat("yyyy年MM月dd").format(expired.timeLimit) == DateFormat("yyyy年MM月dd").format(selectDay)) ).length < 1):(DateFormat("yyyy年MM月dd").format(expiredList[i].timeLimit) == DateFormat("yyyy年MM月dd").format(selectDay))) {
+          _list.add(
+            Container(
+              height: 50.0,
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(width: 1, color: Colors.grey[200]),
+                  ),
                 ),
-              ),
-              child: Slidable(
-                  actionPane: SlidableDrawerActionPane(),
-                  actionExtentRatio: 0.15,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: <Widget>[
-                      Text("todo check"),
-                      Center(
-                        child: Text(
-                          "todo name",
+                child: Slidable(
+                    actionPane: SlidableDrawerActionPane(),
+                    actionExtentRatio: 0.15,
+                    child: Row(
+                      children: [
+                        Checkbox(
+                          value: _clearIndex == 0 ? todoList[i].clear: true,
+                          onChanged: (value){
+                            todoList[i].clear = !todoList[i].clear;
+                            _insert(todoList[i]);
+                            updateListView();
+                            setState(() {});
+                          },
                         ),
+                      Expanded(
+                        child: InkWell(
+                            child: Container(
+                                height:50,
+                                child: _clearIndex == 0 ? Text( todoList[i].title,textAlign:TextAlign.center) : Text( expiredList[i].title ,textAlign:TextAlign.center,style: TextStyle(decoration: TextDecoration.lineThrough) )
+                            ),
+                            onTap: (){
+                              _color = Colors.transparent;
+                              setState(() {});
+                            },
+                            onTapCancel: () {
+                              _color = Colors.transparent;
+                              setState(() {});
+                        },
+                            onTapDown: (TapDownDetails details) {
+                              _color = Colors.lightBlueAccent;
+                              setState(() {});
+                            }),
                       ),
                     ],
-                  ),
-                  secondaryActions: <Widget>[
-                    IconSlideAction(
-                        caption: '削除',
-                        color: Colors.red,
-                        icon: Icons.delete,
-                        onTap: () {
-//                          _delete(calendarList[i].id);
-//                          updateListView();
-                          monthChange();
-                          setState(() {});
-                        }
-                    )
-                  ]
-              ),
-            ),
-            onTap: () async {
-              await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) {
-                    return EditForm(inputMode: InputMode.edit,);
-                  },
+                    ),
+                    secondaryActions: <Widget>[
+                      IconSlideAction(
+                          caption: '削除',
+                          color: Colors.red,
+                          icon: Icons.delete,
+                          onTap: () {
+                            _delete(todoList[i].id);
+                            updateListView();
+                            monthChange();
+                            setState(() {});
+                          }
+                      )
+                    ]
                 ),
-              );
-              //    updateListView();
-            },
-          ),
-        );
+              ),
+          );
+        }
       }
     }
     return _list;
   }
 
-//  Future<void> updateListView() async{
-////全てのDBを取得
-//    calendarList = await databaseHelper.getCalendarList();
-//    setState(() {});
-//  }
-//
+  Future<void> updateListView() async{
+//全てのDBを取得
+    todoList = await databaseHelper.getTodoList();
+    expiredList = await databaseHelperExpired.getExpiredList();
+    setState(() {});
+  }
+
   Future<void> monthChange() async {
     final DateTime _date = DateTime.now();
     var selectMonthDate = DateTime(
@@ -489,10 +506,18 @@ class _MyHomePageState extends State<MyHomePage> {
     return _selectOfMonth;
   }
 
+  Future<void> _save(Todo todo)async{
+    await databaseHelper.updateTodo(todo);
+  }
 
+  Future<void> _insert(Todo todo)async{
+    await databaseHelperExpired.insertExpired(Expired(todo.title, true, selectDay, todo.id));
+  }
+
+  Future <void> _delete(int id) async{
+    await databaseHelper.deleteTodo(id);
+  }
 }
-//  Future <void> _delete(int id) async{
-//    await databaseHelper.deleteCalendar(id);
-//  }
+
 
 

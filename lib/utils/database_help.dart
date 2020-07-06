@@ -13,7 +13,7 @@ class DatabaseHelper {
   static String tableName = 'todo';
   static String colId = 'id';
   static String colTitle = 'title';
-  static String colCheck = 'check';
+  static String colClear = 'clear';
   static String colTimeLimit = 'timeLimit';
   static String colLongTerm = 'longTerm';
 
@@ -44,9 +44,11 @@ class DatabaseHelper {
 
   static void _createDb(Database db, int newVersion) async {
 
-    await db.execute('CREATE TABLE $tableName($colId INTEGER PRIMARY KEY AUTOINCREMENT, $colTitle TEXT, '
-        '$colCheck INTEGER, $colTimeLimit TEXT, $colLongTerm INTEGER)');
-    await db.insert(tableName,Todo("筋トレ",0,null,0).toMap());
+    await db.execute('CREATE TABLE $tableName($colId INTEGER PRIMARY KEY AUTOINCREMENT, $colTitle TEXT, $colClear TEXT, $colTimeLimit TEXT, $colLongTerm INTEGER)');
+
+    await db.insert(tableName,Todo("筋トレ",false,null,0).toMap());
+    await db.insert(tableName,Todo("ストレッチ",false,DateTime(2020,DateTime.july, 3),0).toMap());
+
 
   }
 

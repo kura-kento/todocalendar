@@ -1,17 +1,16 @@
 import 'package:intl/intl.dart';
 
-class Todo {
+class Expired {
 
   int _id;
   String _title;
   bool _clear;
   DateTime _timeLimit;
-  int _longTerm;
-  int _repetition;
+  int _todoId;
 
-  Todo(this._title, this._clear, this._timeLimit, this._longTerm, this._repetition);
+  Expired(this._title, this._clear, this._timeLimit, this._todoId);
 
-  Todo.withId(this._id, this._title, this._clear, this._timeLimit, this._longTerm, this._repetition);
+  Expired.withId(this._id, this._title, this._clear, this._timeLimit, this._todoId);
 
   int get id => _id;
 
@@ -21,9 +20,7 @@ class Todo {
 
   DateTime get timeLimit => _timeLimit;
 
-  int get longTerm => _longTerm;
-
-  int get repetition => _repetition;
+  int get todoId => _todoId;
 
 
   set title(String newTitle) {
@@ -40,12 +37,8 @@ class Todo {
     this._timeLimit = newTimeLimit;
   }
 
-  set longTerm(int newLongTerm) {
-    this._longTerm = newLongTerm;
-  }
-
-  set repetition(int newRepetition) {
-    this._repetition = newRepetition;
+  set todoId(int newTodoId) {
+    this._todoId = newTodoId;
   }
 
   // Convert a Note object into a Map object
@@ -57,17 +50,17 @@ class Todo {
     map['title'] = _title;
     map['clear'] = _clear.toString();
     map['timeLimit'] = _timeLimit == null ? "0" : DateFormat('yyyy-MM-dd HH:mm').format(_timeLimit);
-    map['longTerm'] = _longTerm;
+    map['todoId'] = _todoId;
     return map;
   }
 
 // MapオブジェクトからCalendarオブジェクトを抽出する
-  Todo.fromMapObject(Map<String, dynamic> map) {
+  Expired.fromMapObject(Map<String, dynamic> map) {
     //print(map);
     this._id = map['id'];
     this._title = map['title'];
     this._clear = map['clear'] == "true" ? true:false;
     this._timeLimit = map['timeLimit'] == "0" ? null : DateTime.parse(map['timeLimit']);
-    this._longTerm = map['longTerm'];
+    this._todoId = map['todoId'];
   }
 }

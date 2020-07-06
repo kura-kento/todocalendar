@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:todocarendarapp/screens/top.dart';
 import 'package:todocarendarapp/utils/database_help.dart';
+import 'package:todocarendarapp/utils/database_helper_expired.dart';
 
 void main() {
   runApp(MyApp());
@@ -36,7 +37,8 @@ class MyApp extends StatelessWidget {
   }
 
   Future<Widget> setting()async{
-   // DatabaseHelper.db = await DatabaseHelper.initializeDatabase();
+    DatabaseHelper.db = await DatabaseHelper.initializeDatabase();
+    DatabaseHelperExpired.db = await DatabaseHelperExpired.initializeDatabase();
     return MyHomePage();
   }
 }
