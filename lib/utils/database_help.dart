@@ -16,6 +16,8 @@ class DatabaseHelper {
   static String colClear = 'clear';
   static String colTimeLimit = 'timeLimit';
   static String colLongTerm = 'longTerm';
+  static String colRepetition = 'repetition';
+
 
 
   DatabaseHelper._createInstance(); // DatabaseHelperのインスタンスを作成するための名前付きコンストラクタ
@@ -44,10 +46,10 @@ class DatabaseHelper {
 
   static void _createDb(Database db, int newVersion) async {
 
-    await db.execute('CREATE TABLE $tableName($colId INTEGER PRIMARY KEY AUTOINCREMENT, $colTitle TEXT, $colClear TEXT, $colTimeLimit TEXT, $colLongTerm INTEGER)');
+    await db.execute('CREATE TABLE $tableName($colId INTEGER PRIMARY KEY AUTOINCREMENT, $colTitle TEXT, $colClear TEXT, $colTimeLimit TEXT, $colLongTerm INTEGER, $colRepetition INTEGER)');
 
-    await db.insert(tableName,Todo("筋トレ",false,null,0).toMap());
-    await db.insert(tableName,Todo("ストレッチ",false,DateTime(2020,DateTime.july, 3),0).toMap());
+    await db.insert(tableName,Todo("筋トレ",false,null,0,null).toMap());
+    await db.insert(tableName,Todo("ストレッチ",false,DateTime(2020,DateTime.july, 3),0,null).toMap());
 
 
   }

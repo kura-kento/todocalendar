@@ -58,6 +58,7 @@ class Todo {
     map['clear'] = _clear.toString();
     map['timeLimit'] = _timeLimit == null ? "0" : DateFormat('yyyy-MM-dd HH:mm').format(_timeLimit);
     map['longTerm'] = _longTerm;
+    map['repetition'] = _repetition;
     return map;
   }
 
@@ -69,5 +70,7 @@ class Todo {
     this._clear = map['clear'] == "true" ? true:false;
     this._timeLimit = map['timeLimit'] == "0" ? null : DateTime.parse(map['timeLimit']);
     this._longTerm = map['longTerm'];
+    this._repetition = map['repetition'];
+
   }
 }

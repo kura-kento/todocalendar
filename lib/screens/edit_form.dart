@@ -29,6 +29,10 @@ class _EditFormState extends State<EditForm> {
   DateTime _timeText;
   DateTime _dateText;
   bool _longTimeBool = false;
+  List<bool> _boolList = [false,false,false,false,false,false,false];
+  List<int> _weekNumbers =[2,3,5,7,11,13,17];
+  List<String> _week = ["日","月","火","水","木","金","土"];
+  int _number =1;
   @override
   void initState() {
     super.initState();
@@ -96,8 +100,14 @@ class _EditFormState extends State<EditForm> {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text("  日程"),
-                                  Text((_dateText == null ? DateFormat("M月d日").format(widget.selectDay) : DateFormat("M月d日").format(_dateText)) + " ＞")
+                                  Text("   日程",style: TextStyle(fontSize: 20,color: Colors.grey[800])),
+                                  Row(
+                                    children: [
+                                      Text((_dateText == null ? DateFormat("M月d日").format(widget.selectDay) : DateFormat("M月d日").format(_dateText)) + " ",style: TextStyle(fontSize: 20,color: Colors.grey[800])),
+                                      Icon(Icons.expand_more,color: Colors.grey[800],),
+                                      Text("    ")
+                                    ],
+                                  )
                                 ],
                               ),
                             ),
@@ -171,8 +181,14 @@ class _EditFormState extends State<EditForm> {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text("  時間"),
-                                  Text((_timeText == null ? DateFormat("HH:mm").format(widget.selectDay) : DateFormat("HH:mm").format(_timeText)) + " ＞")
+                                  Text("   時間",style: TextStyle(fontSize: 20,color: Colors.grey[800])),
+                                  Row(
+                                    children: [
+                                      Text((_timeText == null ? DateFormat("HH:mm").format(widget.selectDay) : DateFormat("HH:mm").format(_timeText))+" ",style: TextStyle(fontSize: 20,color: Colors.grey[800])),
+                                      Icon(Icons.expand_more,color: Colors.grey[800],),
+                                      Text("    ")
+                                    ],
+                                  )
                                 ],
                               ),
                             ),
@@ -243,6 +259,22 @@ class _EditFormState extends State<EditForm> {
                           Divider(color: Colors.grey[100],height: 2.5),
                           Container(
                             color: Colors.grey[200],
+                            child: ExpansionTile(
+                              title: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text("繰り返し"),
+                                  Text(weekName())
+                                ],
+                              ),
+                              backgroundColor: Colors.white,
+                              children: weekList(),
+                              initiallyExpanded: false,
+                            ),
+                          ),
+                          Divider(color: Colors.grey[100],height: 2.5),
+                          Container(
+
                             child: CheckboxListTile(
                               title: Text("長期目標"),
                               value:  _longTimeBool,
@@ -263,7 +295,7 @@ class _EditFormState extends State<EditForm> {
                                   textScaleFactor: 1.5,
                                 ),
                                 onPressed: (){
-                                  _save(Todo(titleController.text,false,DateTime(_dateText.year,_dateText.month, _dateText.day),_longTimeBool ? 1:0));
+                                  _save(Todo(titleController.text,false,DateTime(_dateText.year,_dateText.month, _dateText.day),_longTimeBool ? 1:0,_number));
                                   moveToLastScreen();
                                   setState(() {});
                                 },
@@ -280,6 +312,45 @@ class _EditFormState extends State<EditForm> {
       ),
     );
   }
+
+  List<Widget> weekList(){
+   List<Widget> _list = [];
+
+   for(int i = 0; i < 7; i++){
+     _list.add(
+       Container(
+       color: Colors.grey[200],
+       child: CheckboxListTile(
+         title: Text("毎" + _week[i] + "曜日"),
+         value:  _boolList[i],
+         controlAffinity: ListTileControlAffinity.leading,
+         onChanged: (value){
+           _number % _weekNumbers[i] == 0 ?  _number ~/= _weekNumbers[i] :_number *= _weekNumbers[i] ;
+           _boolList[i] = !_boolList[i];
+           setState(() {});
+         },
+       ),
+     ),
+     );
+   }
+   return _list;
+}
+
+String weekName(){
+    String _text = "";
+    for(int i = 0; i < 7; i++){
+      if(_number % _weekNumbers[i] == 0){
+        _text += _week[i];
+      }
+    }
+  if(_number == 1){
+    _text = "なし";
+  }
+  if(_number == 510510){
+    _text = "毎日";
+  }
+    return _text;
+}
 
   moveToLastScreen() async{
     FocusScope.of(context).unfocus();
