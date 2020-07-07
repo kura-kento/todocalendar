@@ -11,10 +11,11 @@ enum InputMode{
 
 
 class EditForm extends StatefulWidget {
-  EditForm({Key key,this.inputMode, this.selectDay}) : super(key: key);
+  EditForm({Key key,this.inputMode, this.selectDay,this.todo}) : super(key: key);
 
   final InputMode inputMode;
   final DateTime selectDay;
+  final Todo todo;
 
   @override
   _EditFormState createState() => _EditFormState();
@@ -35,6 +36,12 @@ class _EditFormState extends State<EditForm> {
   int _number =1;
   @override
   void initState() {
+    _dateText = widget.selectDay;
+    if(widget.inputMode == InputMode.edit){
+      titleController = TextEditingController(text: widget.todo.title);
+      _number = widget.todo.repetition;
+      _longTimeBool = widget.todo.longTerm == 0 ? true:false;
+    }
     super.initState();
   }
   @override
@@ -55,8 +62,7 @@ class _EditFormState extends State<EditForm> {
                   children: <Widget>[
                     Expanded(
                       flex: 1,
-                      child: IconButton(icon: Icon(
-                          Icons.arrow_back),
+                      child: IconButton(icon: Icon(Icons.arrow_back),
                         onPressed: () => moveToLastScreen(),
                       ),
                     ),
@@ -103,7 +109,7 @@ class _EditFormState extends State<EditForm> {
                                   Text("   日程",style: TextStyle(fontSize: 20,color: Colors.grey[800])),
                                   Row(
                                     children: [
-                                      Text((_dateText == null ? DateFormat("M月d日").format(widget.selectDay) : DateFormat("M月d日").format(_dateText)) + " ",style: TextStyle(fontSize: 20,color: Colors.grey[800])),
+                                      Text((DateFormat("M月d日").format(_dateText)) + " ",style: TextStyle(fontSize: 20,color: Colors.grey[800])),
                                       Icon(Icons.expand_more,color: Colors.grey[800],),
                                       Text("    ")
                                     ],
@@ -242,6 +248,7 @@ class _EditFormState extends State<EditForm> {
                                                   use24hFormat: true,
                                                   onDateTimeChanged: (DateTime newDateTime) {
                                                     _timeText = newDateTime;
+                                                    print(_timeText);
                                                     setState(() {});
                                                   },
                                                 ),
@@ -274,7 +281,7 @@ class _EditFormState extends State<EditForm> {
                           ),
                           Divider(color: Colors.grey[100],height: 2.5),
                           Container(
-
+                            color: Colors.grey[200],
                             child: CheckboxListTile(
                               title: Text("長期目標"),
                               value:  _longTimeBool,
@@ -295,7 +302,7 @@ class _EditFormState extends State<EditForm> {
                                   textScaleFactor: 1.5,
                                 ),
                                 onPressed: (){
-                                  _save(Todo(titleController.text,false,DateTime(_dateText.year,_dateText.month, _dateText.day),_longTimeBool ? 1:0,_number));
+                                  _save(Todo(titleController.text,false,DateTime(_number == 1 ?_dateText.year:3020,_dateText.month, _dateText.day),_longTimeBool ? 1:0,_number,DateTime.now()));
                                   moveToLastScreen();
                                   setState(() {});
                                 },
@@ -359,6 +366,13 @@ String weekName(){
   }
 
   Future<void> _save(Todo todo)async{
-    await databaseHelper.insertTodo(todo);
+     if(widget.inputMode == InputMode.create){
+       await databaseHelper.insertTodo(todo);
+     }else{
+       await databaseHelper.updateTodo(Todo.withId(widget.todo.id, todo.title, todo.clear, todo.timeLimit, todo.longTerm, todo.repetition, todo.createdAt)
+
+       );
+     }
+
   }
 }

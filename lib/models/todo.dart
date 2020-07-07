@@ -8,10 +8,11 @@ class Todo {
   DateTime _timeLimit;
   int _longTerm;
   int _repetition;
+  DateTime _createdAt;
 
-  Todo(this._title, this._clear, this._timeLimit, this._longTerm, this._repetition);
+  Todo(this._title, this._clear, this._timeLimit, this._longTerm, this._repetition,this._createdAt);
 
-  Todo.withId(this._id, this._title, this._clear, this._timeLimit, this._longTerm, this._repetition);
+  Todo.withId(this._id, this._title, this._clear, this._timeLimit, this._longTerm, this._repetition,this._createdAt);
 
   int get id => _id;
 
@@ -25,6 +26,7 @@ class Todo {
 
   int get repetition => _repetition;
 
+  DateTime get createdAt => _createdAt;
 
   set title(String newTitle) {
     if (newTitle.length <= 255) {
@@ -48,6 +50,10 @@ class Todo {
     this._repetition = newRepetition;
   }
 
+  set createdAt(DateTime newCreatedAt) {
+    this._createdAt = newCreatedAt;
+  }
+
   // Convert a Note object into a Map object
   Map<String, dynamic> toMap() {
 
@@ -59,18 +65,20 @@ class Todo {
     map['timeLimit'] = _timeLimit == null ? "0" : DateFormat('yyyy-MM-dd HH:mm').format(_timeLimit);
     map['longTerm'] = _longTerm;
     map['repetition'] = _repetition;
+    map['createdAt'] =  DateFormat('yyyy-MM-dd HH:mm').format(_createdAt);
     return map;
   }
 
 // MapオブジェクトからCalendarオブジェクトを抽出する
   Todo.fromMapObject(Map<String, dynamic> map) {
-    //print(map);
+    print(map);
     this._id = map['id'];
     this._title = map['title'];
     this._clear = map['clear'] == "true" ? true:false;
     this._timeLimit = map['timeLimit'] == "0" ? null : DateTime.parse(map['timeLimit']);
     this._longTerm = map['longTerm'];
     this._repetition = map['repetition'];
+    this._createdAt = DateTime.parse(map['createdAt']);
 
   }
 }

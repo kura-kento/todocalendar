@@ -365,13 +365,39 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  //１日のマスの中身
+  List<Widget> squareValue(date) {
+    List<Widget> _list = [Expanded(flex: 1, child: Container())];
+    _list.add(
+      Expanded(
+          flex: 2,
+          child: Container(
+              child: Align(
+                  alignment: Alignment.center,
+                  child: date == DateTime.now()  ? Icon(Icons.panorama_fish_eye,color: Colors.red,):Text("")
+              )
+          )
+      ),
+    );
+    return _list;
+  }
+
   //一日のリスト（カレンダー下）
   List<Widget> memoList() {
     List<Widget> _list = [];
     for(int _clearIndex = 0; _clearIndex < 2; _clearIndex++){
       for (int i = 0; i < (_clearIndex == 0 ? todoList.length: expiredList.length); i++) {
-        //selectday以上期限以下 期限ぎれの場合
-        if (_clearIndex == 0 ?((todoList[i].timeLimit == null || (todoList[i].timeLimit).compareTo(selectDay) > 0) && expiredList.where((expired) => (expired.todoId == todoList[i].id && DateFormat("yyyy年MM月dd").format(expired.timeLimit) == DateFormat("yyyy年MM月dd").format(selectDay)) ).length < 1):(DateFormat("yyyy年MM月dd").format(expiredList[i].timeLimit) == DateFormat("yyyy年MM月dd").format(selectDay))) {
+        //（作成日 < 選択日）かつ（期限がnull）または（selectDayでまだクリアしていないリスト）
+        if (_clearIndex == 0 ?( (todoList[i].createdAt).compareTo(selectDay) <= 0  && (expiredList.where((expired) => (expired.todoId == todoList[i].id && DateFormat("yyyy年MM月dd").format(expired.timeLimit) == DateFormat("yyyy年MM月dd").format(selectDay)) ).length < 1) )
+            && todoList[i].repetition % 2 == 0 && selectDay.weekday == 7
+            || todoList[i].repetition % 3 == 0 && selectDay.weekday == 1
+            || todoList[i].repetition % 5 == 0 && selectDay.weekday == 2
+            || todoList[i].repetition % 7 == 0 && selectDay.weekday == 3
+            || todoList[i].repetition % 11 == 0 && selectDay.weekday == 4
+            || todoList[i].repetition % 13 == 0 && selectDay.weekday == 5
+            || todoList[i].repetition % 17 == 0 && selectDay.weekday == 6
+
+            :  (DateFormat("yyyy年MM月dd").format(expiredList[i].timeLimit) == DateFormat("yyyy年MM月dd").format(selectDay)) ) {
           _list.add(
             Container(
               height: 50.0,
@@ -389,7 +415,11 @@ class _MyHomePageState extends State<MyHomePage> {
                           value: _clearIndex == 0 ? todoList[i].clear: true,
                           onChanged: (value){
                             todoList[i].clear = !todoList[i].clear;
-                            _insert(todoList[i]);
+                            if(todoList[i].repetition == 1){
+                              _save(todoList[i]);
+                            }else{
+                              _clearIndex == 0 ? _insertExpired(todoList[i]):_deleteExpired(expiredList[i].id);
+                            }
                             updateListView();
                             setState(() {});
                           },
@@ -400,9 +430,17 @@ class _MyHomePageState extends State<MyHomePage> {
                                 height:50,
                                 child: _clearIndex == 0 ? Text( todoList[i].title,textAlign:TextAlign.center) : Text( expiredList[i].title ,textAlign:TextAlign.center,style: TextStyle(decoration: TextDecoration.lineThrough) )
                             ),
-                            onTap: (){
+                            onTap: () async {
                               _color = Colors.transparent;
-                              setState(() {});
+                              await Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context){
+                                    return EditForm(inputMode: InputMode.edit,selectDay: selectDay,todo:todoList[i]);
+                                  },
+                                ),
+                              );
+                              updateListView();
+                              monthChange();
                             },
                             onTapCancel: () {
                               _color = Colors.transparent;
@@ -416,14 +454,13 @@ class _MyHomePageState extends State<MyHomePage> {
                     ],
                     ),
                     secondaryActions: <Widget>[
-                      IconSlideAction(
+                        IconSlideAction(
                           caption: '削除',
                           color: Colors.red,
                           icon: Icons.delete,
                           onTap: () {
-                            _delete(todoList[i].id);
+                            _clearIndex == 0 ? _delete(todoList[i].id):_deleteExpired(expiredList[i].id);
                             updateListView();
-                            monthChange();
                             setState(() {});
                           }
                       )
@@ -437,6 +474,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return _list;
   }
 
+
   Future<void> updateListView() async{
 //全てのDBを取得
     todoList = await databaseHelper.getTodoList();
@@ -446,36 +484,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> monthChange() async {
     final DateTime _date = DateTime.now();
-    var selectMonthDate = DateTime(
-        _date.year, _date.month + selectMonthValue + _scrollIndex, 1);
-//    monthMap = await databaseHelper.getCalendarMonthInt(selectMonthDate);
-//    yearSum = await databaseHelper.getCalendarYearInt(selectMonthDate);
     isLoading = false;
     setState(() {});
-  }
-
-  //１日のマスの中身
-  List<Widget> squareValue(date) {
-    List<Widget> _list = [Expanded(flex: 1, child: Container())];
-      _list.add(
-        Expanded(
-            flex: 2,
-            child: Container(
-                child: Align(
-                    alignment: Alignment.center,
-                    child: AutoSizeText(
-                      "●",
-                      style: TextStyle(
-                          color: Colors.redAccent[200]
-                      ),
-                      minFontSize: 4,
-                      maxLines: 1,
-                    )
-                )
-            )
-        ),
-      );
-    return _list;
   }
 
 //iとjから日程のデータを出す（Date型）
@@ -509,14 +519,18 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _save(Todo todo)async{
     await databaseHelper.updateTodo(todo);
   }
-
-  Future<void> _insert(Todo todo)async{
-    await databaseHelperExpired.insertExpired(Expired(todo.title, true, selectDay, todo.id));
-  }
-
   Future <void> _delete(int id) async{
     await databaseHelper.deleteTodo(id);
   }
+
+  Future<void> _insertExpired(Todo todo)async{
+    await databaseHelperExpired.insertExpired(Expired(todo.title, true, selectDay, todo.id));
+  }
+  Future <void> _deleteExpired(int id) async{
+    await databaseHelperExpired.deleteExpired(id);
+  }
+
+
 }
 
 
